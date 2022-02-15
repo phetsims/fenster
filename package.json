@@ -29,7 +29,8 @@
     "globals": {
       "alert": "readonly",
       "cordova": "readonly",
-      "navigator": "readonly"
+      "navigator": "readonly",
+      "TTS": "readonly"
     }
   }
 }
