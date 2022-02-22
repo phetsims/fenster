@@ -7,39 +7,239 @@ document.addEventListener( 'deviceready', onDeviceReady, false );
 function onDeviceReady() {
   // Cordova is now initialized. Have fun!
 
-  console.log( 'Running cordova-' + cordova.platformId + '@' + cordova.version );
+  // console.log( 'Running cordova-' + cordova.platformId + '@' + cordova.version );
   document.getElementById( 'deviceready' ).classList.add( 'ready' );
 
   if ( window.speechSynthesis ) {
-    alert( 'Cordova has speech synthesis! You may not need a plugin' );
+    alert( 'Cordova has built-in speech synthesis! You may not need a plugin.' );
   }
 
   const simFrame = document.getElementById( 'sim-frame' );
-  const simFrameWindow = simFrame.contentWindow;
-  if ( simFrameWindow.speechSynthesis || simFrameWindow.SpeechSynthesisUtterance ) {
-    alert( 'Your sim frame has SpeechSynthesis?' );
+
+  // Assign the implementation of SpeechSynthesis to the parent window, the simulation will try to use this
+  // polyfill implementation with utterance-queue/SpeechSynthesisParentPolyfill
+  window.SpeechSynthesis = SpeechSynthesis;
+  window.SpeechSynthesisUtterance = SpeechSynthesisUtterance;
+  window.speechSynthesis = new SpeechSynthesis();
+
+  // Assign the simulation src after polyfills are ready for use. Query parameters request
+  simFrame.src = 'quadrilateral_en_phet.html?postMessageOnLoad&speechSynthesisFromParent';
+}
+
+/**
+ * A polyfill for SpeechSynthesis that implements the feature using a Text to Speech plugin for Cordova. This is
+ * an implementation of web SpeechSynthesis, see https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
+ */
+class SpeechSynthesis {
+  constructor() {
+
+    // A boolean value that returns `true` if an utterance is currently in the process of being spoken.
+    this.speaking = false;
+
+    // A boolean value that returns true if the SpeechSynthesis object is in a paused state.
+    this.paused = false;
+
+    // A boolean value that returns true if the utterance queue contains as-yet-unspoken utterances.
+    this.pending = false;
+
+    // A function that is called when the list of available voices changes.
+    // TODO: Probably a better way to implement events.
+    this.onvoiceschanged = () => {};
   }
 
-  simFrame.src = 'quadrilateral_en_phet.html?postMessageOnLoad';
+  /**
+   * Removes all Utterances from the utterance queue and stops speech.
+   * @public
+   */
+  cancel() {
 
-  // Try to set the speechSynthesis and SpeechSynthesisUtterance objects/classes in the
-  // simulation window because they will not be available in an android Webview.
-  // TODO: For some reason these are gone by the simulation `load` event. Probably need to set these in the sim.
-  simFrameWindow.speechSynthesis = {};
-  simFrameWindow.SpeechSynthesisUtterance = {};
+    // According to https://github.com/spasma/cordova-plugin-tts-advanced#readme the way to cancel is
+    // to request an empyt string. speak() has cancel true by default.
+    this.speak( new SpeechSynthesisUtterance( '' ) );
+  }
 
-  window.addEventListener( 'message', event => {
-    const data = JSON.parse( event.data );
-    console.log( 'message received', data.type );
+  /**
+   * Returns a list of SpeechSynthesisVoice objects representing all the available voices on the
+   * current device.
+   * @public
+   */
+  getVoices() {
 
-    if ( data.type === 'load' ) {
-      TTS.speak( 'Simulation loaded' );
+    // TODO: implement voices
+    return [];
+  }
+
+  /**
+   * Puts the SpeechSynthesis object into a paused state.
+   * @public
+   */
+  pause() {
+    throw new Error( 'TTS plugin does not support pause/resume' );
+  }
+
+  /**
+   * Puts the SpeechSynthesis object into a non-paused state. Resumes it if it was alreadyd paused.
+   * @public
+   */
+  resume() {
+    throw new Error( 'TTS plugin does not support pause/resume' );
+  }
+
+  /**
+   * @public
+   */
+  addEventListener( eventType, callback ) {
+    if ( eventType === 'voicesChanged' ) {
+
+      // TODO: Add an event listener to when the voices change
     }
-
-    // TODO: Send this event from the simulation with postMessage.
-    if ( data.type === 'speech-synthesis' ) {
-      console.log( data.stringToSpeak );
-      TTS.speak( data.stringToSpeak );
+    else {
+      throw new Error( 'event type not supported, can only use voicesChanged' );
     }
-  } );
+  }
+
+  /**
+   * Adds an utterance to the utterance queue. It will be spoken when any other utterances are queued before it
+   * have been spoken.
+   * @public
+   * @param {SpeechSynthesisUtterance} utterance
+   */
+  speak( utterance ) {
+
+    console.log( utterance.text );
+
+    // synchronously set the speaking flag to true
+    this.speaking = true;
+
+    // TTS doesn't offer a 'start' event so we do our best by calling start callbacks eagerly.
+    utterance.fireStart();
+
+    TTS.speak( {
+      text: utterance.text,
+      rate: utterance.rate,
+      pitch: utterance.pitch,
+
+
+      // TODO: Implement volume? TTS plugin does not support it
+      // volume: utterance.volume,
+
+      // TODO: Implement the voice somehow
+      // identifier: utterance.voice.voiceURI,
+
+      // TODO: We assume that every call speak can cancel the previous Utterance. UtteranceQueue and
+      // SpeechSynthesisAnnouncer will manage interruption for us.
+      cancel: true
+    } ).then( () => {
+
+      // fire the end event on the Utterance
+      utterance.fireEnd();
+
+      // speech success, we are no longer speaking
+      this.speaking = false;
+    }, () => {
+      alert( 'TODO! We dont expect to hit this, if we do investigate.' );
+
+      // fire the end event on the Utterance
+      utterance.fireError();
+
+      // speech failure? We are probably no longer speaking still
+      this.speaking = false;
+    } );
+  }
+}
+
+class SpeechSynthesisUtterance {
+
+  /**
+   * @param {string} text - the string to speak
+   */
+  constructor( text ) {
+
+    // @public {string} - Gets and sets the text that will be synthesized when the utterance is spoken.
+    this.text = text;
+
+    // @public {string} Gets and sets the language of the utterance.
+    this.lang;
+
+    // @public {number} Gets and sets the pitch at which the utterance will be spoken at.
+    this.pitch = 1.0;
+
+    // @public {number} Gets and sets the speed at which the utterance will be spoken at.
+    this.rate = 1.0;
+
+    // @public {SpeechSynthesisVoice} Gets and sets the voice that will be used to speak the utterance.
+    this.voice;
+
+    // @public {number} Gets and sets the volume that the utterance will be spoken at.
+    this.volume = 1.0;
+
+    // @private {Map<string, function[]>} Maps string to a collection of functions that are called back when the event
+    // happens
+    this.listenerMap = new Map();
+  }
+
+  /**
+   * @public
+   */
+  addEventListener( eventType, callback ) {
+    if ( this.listenerMap.has( eventType ) ) {
+      this.listenerMap.get( eventType ).push( callback );
+    }
+    else {
+      this.listenerMap.set( eventType, [ callback ] );
+    }
+  }
+
+  /**
+   * Remove a callback for the eventType.
+   * @public
+   */
+  removeEventListener( eventType, callback ) {
+
+    const listenerList = this.listenerMap.get( eventType );
+    if ( !listenerList || !listenerList.includes( callback ) ) {
+      throw new Error( 'Trying to remove listener that was not added' );
+    }
+    else {
+      this.listenerMap.set( eventType, listenerList.filter( listener => listener !== callback ) );
+    }
+  }
+
+  /**
+   * Call back listeners assigned to the provided eventType.
+   * @private
+   *
+   * @param {string} eventType
+   */
+  fireEvent( eventType ) {
+    if ( this.listenerMap.has( eventType ) ) {
+      this.listenerMap.get( eventType ).forEach( listener => {
+        listener();
+      } );
+    }
+  }
+
+  /**
+   * Call start event callbacks.
+   * @private
+   */
+  fireStart() {
+    this.fireEvent( 'start' );
+  }
+
+  /**
+   * Call end event callbacks.
+   * @private
+   */
+  fireEnd() {
+    this.fireEvent( 'end' );
+  }
+
+  /**
+   * Call error event callbacks.
+   * @private
+   */
+  fireError() {
+    this.fireEvent( 'error' );
+  }
 }
