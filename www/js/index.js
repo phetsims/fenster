@@ -52,8 +52,8 @@ class SpeechSynthesis {
   cancel() {
 
     // According to https://github.com/spasma/cordova-plugin-tts-advanced#readme the way to cancel is
-    // to request an empyt string. speak() has cancel true by default.
-    this.speak( new SpeechSynthesisUtterance( '' ) );
+    // to request an empyt string and set the cancel option to true.
+    this.pluginSpeak( new SpeechSynthesisUtterance( '' ), true );
   }
 
   /**
@@ -97,19 +97,19 @@ class SpeechSynthesis {
   }
 
   /**
-   * Adds an utterance to the utterance queue. It will be spoken when any other utterances are queued before it
-   * have been spoken.
-   * @public
-   * @param {SpeechSynthesisUtterance} utterance
+   * Internal implementation of speak with the TTS plugin, with the ability to cancel previous utterances.
+   * @private
+   * @param utterance
+   * @param withCancel - if true, anything currently being spoken will be cancelled.
    */
-  speak( utterance ) {
-
+  pluginSpeak( utterance, withCancel ) {
     console.log( utterance.text );
 
     // synchronously set the speaking flag to true
     this.speaking = true;
 
     // TTS doesn't offer a 'start' event so we do our best by calling start callbacks eagerly.
+    console.log( 'start event', utterance.text );
     utterance.fireStart();
 
     TTS.speak( {
@@ -117,19 +117,17 @@ class SpeechSynthesis {
       rate: utterance.rate,
       pitch: utterance.pitch,
 
-
-      // TODO: Implement volume? TTS plugin does not support it
+      // NOTE: TTS plugin does not support volume. It is not adjusted by the sim so this is not a big issue for now.
       // volume: utterance.volume,
 
       // TODO: Implement the voice somehow
       // identifier: utterance.voice.voiceURI,
 
-      // TODO: We assume that every call speak can cancel the previous Utterance. UtteranceQueue and
-      // SpeechSynthesisAnnouncer will manage interruption for us.
-      cancel: true
+      cancel: withCancel
     } ).then( () => {
 
       // fire the end event on the Utterance
+      console.log( 'about to fire end for ', utterance.text );
       utterance.fireEnd();
 
       // speech success, we are no longer speaking
@@ -143,6 +141,19 @@ class SpeechSynthesis {
       // speech failure? We are probably no longer speaking still
       this.speaking = false;
     } );
+  }
+
+  /**
+   * Adds an utterance to the utterance queue. It will be spoken when any other utterances are queued before it
+   * have been spoken.
+   * @public
+   * @param {SpeechSynthesisUtterance} utterance
+   */
+  speak( utterance ) {
+
+    // To match the behavior of Web SpeechSynthesis, utterances do not cancel each other when using the basic speak.
+    // SpeechSynthesisAnnouncer will cancel utterances for us.
+    this.pluginSpeak( utterance, false );
   }
 }
 
@@ -198,9 +209,6 @@ class SpeechSynthesisUtterance {
     // remove an event listener that does not exist, see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/removeEventListener
     const listenerList = this.listenerMap.get( eventType );
     if ( listenerList && listenerList.includes( callback ) ) {
-      this.listenerMap.set( eventType, listenerList.filter( listener => listener !== callback ) );
-    }
-    else {
       this.listenerMap.set( eventType, listenerList.filter( listener => listener !== callback ) );
     }
   }
