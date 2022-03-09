@@ -109,7 +109,6 @@ class SpeechSynthesis {
     this.speaking = true;
 
     // TTS doesn't offer a 'start' event so we do our best by calling start callbacks eagerly.
-    console.log( 'start event', utterance.text );
     utterance.fireStart();
 
     TTS.speak( {
@@ -127,7 +126,6 @@ class SpeechSynthesis {
     } ).then( () => {
 
       // fire the end event on the Utterance
-      console.log( 'about to fire end for ', utterance.text );
       utterance.fireEnd();
 
       // speech success, we are no longer speaking
