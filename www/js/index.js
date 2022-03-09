@@ -194,9 +194,11 @@ class SpeechSynthesisUtterance {
    */
   removeEventListener( eventType, callback ) {
 
+    // Gracefully handle when there is no event type/callback listener. DOM behavior is to do nothing if we try to
+    // remove an event listener that does not exist, see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/removeEventListener
     const listenerList = this.listenerMap.get( eventType );
-    if ( !listenerList || !listenerList.includes( callback ) ) {
-      throw new Error( 'Trying to remove listener that was not added' );
+    if ( listenerList && listenerList.includes( callback ) ) {
+      this.listenerMap.set( eventType, listenerList.filter( listener => listener !== callback ) );
     }
     else {
       this.listenerMap.set( eventType, listenerList.filter( listener => listener !== callback ) );
