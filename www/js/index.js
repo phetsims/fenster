@@ -72,7 +72,7 @@ class SpeechSynthesis {
    * @public
    */
   pause() {
-    throw new Error( 'TTS plugin does not support pause/resume' );
+    console.log( 'SpeechSynthesis pause requested but TTS plugin does not support pause/resume.' );
   }
 
   /**
@@ -80,7 +80,7 @@ class SpeechSynthesis {
    * @public
    */
   resume() {
-    throw new Error( 'TTS plugin does not support pause/resume' );
+    console.log( 'SpeechSynthesis resume requested but TTS plugin does not support pause/resume.' );
   }
 
   /**
