@@ -21,7 +21,7 @@
   "devDependencies": {
     "cordova-android": "^9.1.0",
     "cordova-browser": "^6.0.0",
-    "grunt": "~1.4.0"
+    "grunt": "~1.5.3"
   },
   "eslintConfig": {
     "extends": "../chipper/eslint/node_eslintrc.js",
