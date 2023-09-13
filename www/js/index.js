@@ -41,7 +41,7 @@ class SpeechSynthesis {
     this.pending = false;
 
     // A function that is called when the list of available voices changes.
-    // TODO: Probably a better way to implement events.
+    // TODO: Probably a better way to implement events. https://github.com/phetsims/tasks/issues/1129
     this.onvoiceschanged = () => {};
   }
 
@@ -63,7 +63,7 @@ class SpeechSynthesis {
    */
   getVoices() {
 
-    // TODO: implement voices
+    // TODO: implement voices https://github.com/phetsims/tasks/issues/1129
     return [];
   }
 
@@ -89,7 +89,7 @@ class SpeechSynthesis {
   addEventListener( eventType, callback ) {
     if ( eventType === 'voicesChanged' ) {
 
-      // TODO: Add an event listener to when the voices change
+      // TODO: Add an event listener to when the voices change https://github.com/phetsims/tasks/issues/1129
     }
     else {
       throw new Error( 'event type not supported, can only use voicesChanged' );
@@ -119,7 +119,7 @@ class SpeechSynthesis {
       // NOTE: TTS plugin does not support volume. It is not adjusted by the sim so this is not a big issue for now.
       // volume: utterance.volume,
 
-      // TODO: Implement the voice somehow
+      // TODO: Implement the voice somehow https://github.com/phetsims/tasks/issues/1129
       // identifier: utterance.voice.voiceURI,
 
       cancel: withCancel
