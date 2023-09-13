@@ -34,9 +34,6 @@
       "cordova": "readonly",
       "navigator": "readonly",
       "TTS": "readonly"
-    },
-    "rules": {
-      "todo-should-have-issue": "off"
     }
   }
 }
