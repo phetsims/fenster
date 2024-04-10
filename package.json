@@ -26,6 +26,7 @@
   "eslintConfig": {
     "extends": "../chipper/eslint/node_eslintrc.js",
     "ignorePatterns": [
+      "**/**",
       "platforms/",
       "plugins/"
     ],
