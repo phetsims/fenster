@@ -38,6 +38,18 @@
     },
     "rules": {
       "todo-should-have-issue": "off"
-    }
+    },
+    "overrides": [
+      {
+        "files": [
+          "**/*.ts"
+        ],
+        "parserOptions": {
+          "project": [
+            "../fenster/tsconfig.json"
+          ]
+        }
+      }
+    ]
   }
 }
