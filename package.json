@@ -22,22 +22,5 @@
     "cordova-android": "~9.1.0",
     "cordova-browser": "~6.0.0",
     "grunt": "~1.5.3"
-  },
-  "eslintConfig": {
-    "extends": "../chipper/eslint/node_eslintrc.js",
-    "ignorePatterns": [
-      "**/**",
-      "platforms/",
-      "plugins/"
-    ],
-    "globals": {
-      "alert": "readonly",
-      "cordova": "readonly",
-      "navigator": "readonly",
-      "TTS": "readonly"
-    },
-    "rules": {
-      "todo-should-have-issue": "off"
-    }
   }
 }
